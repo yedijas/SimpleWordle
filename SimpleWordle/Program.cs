@@ -12,7 +12,7 @@ namespace SimpleWordle
     {
         static string RawDataSource = @"D:\Projects\data\enwiktionary-latest-all-titles";
         static string CleanDataFile = @"D:\Projects\data\clean_enwiktionary-latest-all-titles";
-        static List<string> sixLettersWords = new List<string>();
+        static IEnumerable<string> sixLettersWords = new List<string>();
 
         /// <summary>
         /// Main program
@@ -36,20 +36,19 @@ namespace SimpleWordle
             }
 
             string wordOfTheDay = GetRandomWord();
+            string myGuess = "";
 
             Console.WriteLine("Simple Wordle " + DateTime.Today.ToString("yyyy-MM-dd") + "!");
-            string myGuess = "";
 
             while (!guessed && !passed)
             {
-                while(myGuess.Length != 6)
+                while (myGuess.Length != 6)
                 {
                     myGuess = Console.ReadLine();
                 }
-                if (CheckGuess(myGuess.ToLowerInvariant(),wordOfTheDay))
+                if (CheckGuess(myGuess.ToLowerInvariant(), wordOfTheDay))
                 {
                     Console.Write(" " + counter + @"/6");
-
                     guessed = true;
                 }
                 else
@@ -96,13 +95,9 @@ namespace SimpleWordle
             }
 
             if (userWord == correctWord)
-            {
                 return true;
-            }
             else
-            {
                 return false;
-            }
         }
 
         /// <summary>
@@ -112,8 +107,8 @@ namespace SimpleWordle
         private static string GetRandomWord()
         {
             Random rng = new Random((int)DateTime.Today.Ticks);
-            int randomIndex = rng.Next(0, sixLettersWords.Count - 1);
-            return sixLettersWords[randomIndex];
+            int randomIndex = rng.Next(0, sixLettersWords.Count() - 1);
+            return sixLettersWords.ElementAt(randomIndex);
         }
 
         /// <summary>
@@ -122,10 +117,9 @@ namespace SimpleWordle
         /// <param name="Source">wikitionary dump</param>
         private static void LoadCleanData(string Source)
         {
-            sixLettersWords = (from words in File.ReadAllLines(Source).ToList<string>()
-                               where words.Length == 6
-                               select words).ToList();
-
+            sixLettersWords = from words in File.ReadAllLines(Source)
+                              where words.Length == 6
+                              select words;
         }
     }
 }
