@@ -4,7 +4,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.IO;
-using SimpleWordle.Helper;
+using SimpleWordleLib.Helpers;
+using SimpleWordleLib.Models;
 
 namespace SimpleWordle
 {
@@ -13,6 +14,7 @@ namespace SimpleWordle
         static string RawDataSource = @"D:\Projects\data\enwiktionary-latest-all-titles";
         static string CleanDataFile = @"D:\Projects\data\clean_enwiktionary-latest-all-titles";
         static IEnumerable<string> sixLettersWords = new List<string>();
+        static WordleGame theGame = new WordleGame();
 
         /// <summary>
         /// Main program
@@ -20,84 +22,37 @@ namespace SimpleWordle
         /// <param name="args">n/a</param>
         static void Main(string[] args)
         {
-            bool guessed = false;
-            int counter = 1;
-            bool passed = false;
-
-            if (!File.Exists(CleanDataFile))
-            {
-                WiktionaryProcessor wikiProcessor = new WiktionaryProcessor();
-                wikiProcessor.ProcessRawData(RawDataSource, CleanDataFile);
-                sixLettersWords = wikiProcessor.Words.Where(o => o.Length == 6).ToList();
-            }
-            else
-            {
-                LoadCleanData(CleanDataFile);
-            }
-
-            string wordOfTheDay = GetRandomWord();
+            LoadDataFromWiktionary();
             string myGuess = "";
 
             Console.WriteLine("Simple Wordle " + DateTime.Today.ToString("yyyy-MM-dd") + "!");
+            theGame.WordOfTheDay = GetRandomWord();
 
-            while (!guessed && !passed)
+            while (!theGame.IsCorrect && !theGame.IsTimeOut)
             {
                 while (myGuess.Length != 6)
                 {
                     myGuess = Console.ReadLine();
                 }
-                if (CheckGuess(myGuess.ToLowerInvariant(), wordOfTheDay))
-                {
-                    Console.Write(" " + counter + @"/6");
-                    guessed = true;
-                }
-                else
-                {
-                    Console.Write(" " + counter + @"/6");
-                    Console.WriteLine();
-                    counter += 1;
-                    if (counter == 6)
-                    {
-                        passed = true;
-                    }
-                }
+                theGame.CheckGuess(myGuess);
+                Console.Write(theGame.Hints[theGame.GuessCount - 1]);
+                Console.WriteLine(" " + theGame.GuessCount + @"/6");
                 myGuess = "";
             }
-            Console.ReadKey();
-            return;
-        }
 
-        /// <summary>
-        /// Check user input guess. Write V if in correct position, M if in wrong position, X if letter not exists.
-        /// </summary>
-        /// <param name="userWord">user guess</param>
-        /// <param name="correctWord">word of the day</param>
-        /// <returns></returns>
-        private static bool CheckGuess(string userWord, string correctWord)
-        {
-            var uwArray = userWord.ToCharArray();
-            var cwArray = correctWord.ToCharArray();
-
-            for (int i = 0; i < uwArray.Length; i++)
+            if (theGame.IsCorrect)
             {
-                if (uwArray[i] == cwArray[i])
-                {
-                    Console.Write("V");
-                }
-                else if (correctWord.Contains(uwArray[i]))
-                {
-                    Console.Write("M");
-                }
-                else
-                {
-                    Console.Write("X");
-                }
+                Console.WriteLine();
+                Console.WriteLine("Congratulations! You've guessed the right word!");
+            }
+            if (!theGame.IsCorrect && theGame.IsTimeOut)
+            {
+                Console.WriteLine();
+                Console.WriteLine("Too bad! You've ran out of chance! The correct word is: " + theGame.WordOfTheDay);
             }
 
-            if (userWord == correctWord)
-                return true;
-            else
-                return false;
+            Console.ReadKey();
+            return;
         }
 
         /// <summary>
@@ -112,7 +67,7 @@ namespace SimpleWordle
         }
 
         /// <summary>
-        /// Get clean data of 6 words from wikitionary dump.
+        /// Get clean data of 6 words from cleaned wikitionary dump.
         /// </summary>
         /// <param name="Source">wikitionary dump</param>
         private static void LoadCleanData(string Source)
@@ -120,6 +75,25 @@ namespace SimpleWordle
             sixLettersWords = from words in File.ReadAllLines(Source)
                               where words.Length == 6
                               select words;
+        }
+
+
+        /// <summary>
+        /// Get clean data of 6 words from dirty wikitionary dump.
+        /// </summary>
+        private static void LoadDataFromWiktionary()
+        {
+            if (!File.Exists(CleanDataFile))
+            {
+                WiktionaryProcessor wikiProcessor = new WiktionaryProcessor();
+                wikiProcessor.ProcessRawData(RawDataSource, CleanDataFile);
+                sixLettersWords = wikiProcessor.Words.Where(o => o.Length == 6).ToList();
+            }
+            else
+            {
+                LoadCleanData(CleanDataFile);
+            }
+
         }
     }
 }

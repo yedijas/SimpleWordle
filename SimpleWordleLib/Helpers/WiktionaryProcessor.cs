@@ -6,12 +6,11 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.IO;
 
-namespace SimpleWordle.Helper
+namespace SimpleWordleLib.Helpers
 {
-    class WiktionaryProcessor
+    public class WiktionaryProcessor
     {
         public List<string> Words;
-
         public WiktionaryProcessor()
         {
             Words = new List<string>();
