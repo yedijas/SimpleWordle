@@ -11,9 +11,13 @@ namespace SimpleWordle
 {
     class Program
     {
-        static string RawDataSource = @"D:\Projects\data\enwiktionary-latest-all-titles";
-        static string CleanDataFile = @"D:\Projects\data\clean_enwiktionary-latest-all-titles";
-        static IEnumerable<string> sixLettersWords = new List<string>();
+        static string RawDataSource = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location)
+            + @"\Dumps\enwiktionary-latest-all-titles";
+        static string JSONDataSource = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location)
+            + @"\Dumps\words_dictionary.json";
+        static string CleanDataFile = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location) 
+            + @"\Dumps\clean_enwiktionary-latest-all-titles";
+        static IEnumerable<string> fiveLettersWords = new List<string>();
         static WordleGame theGame = new WordleGame();
 
         /// <summary>
@@ -22,19 +26,20 @@ namespace SimpleWordle
         /// <param name="args">n/a</param>
         static void Main(string[] args)
         {
-            LoadDataFromWiktionary();
             string myGuess = "";
+            //LoadDataFromWiktionary();
+            LoadDataFromJSON();
 
             Console.WriteLine("Simple Wordle " + DateTime.Today.ToString("yyyy-MM-dd") + "!");
-            theGame.WordOfTheDay = GetRandomWord();
+            theGame.WordOfTheDay = GetRandomWord().ToLowerInvariant();
 
             while (!theGame.IsCorrect && !theGame.IsTimeOut)
             {
-                while (myGuess.Length != 6)
+                while (myGuess.Length != 5)
                 {
                     myGuess = Console.ReadLine();
                 }
-                theGame.CheckGuess(myGuess);
+                theGame.CheckGuess(myGuess.ToLowerInvariant());
                 Console.Write(theGame.Hints[theGame.GuessCount - 1]);
                 Console.WriteLine(" " + theGame.GuessCount + @"/6");
                 myGuess = "";
@@ -56,27 +61,37 @@ namespace SimpleWordle
         }
 
         /// <summary>
-        /// Get a random 6 characters word from the list.
+        /// Get a random 5 characters word from the list.
         /// </summary>
-        /// <returns>a 6 character words for user to guess.</returns>
+        /// <returns>a 5 characters words for user to guess.</returns>
         private static string GetRandomWord()
         {
             Random rng = new Random((int)DateTime.Today.Ticks);
-            int randomIndex = rng.Next(0, sixLettersWords.Count() - 1);
-            return sixLettersWords.ElementAt(randomIndex);
+            int randomIndex = rng.Next(0, fiveLettersWords.Count() - 1);
+            return fiveLettersWords.ElementAt(randomIndex);
         }
 
         /// <summary>
-        /// Get clean data of 6 words from cleaned wikitionary dump.
+        /// Get clean data of 5 characters words from cleaned wikitionary dump.
         /// </summary>
         /// <param name="Source">wikitionary dump</param>
         private static void LoadCleanData(string Source)
         {
-            sixLettersWords = from words in File.ReadAllLines(Source)
+            fiveLettersWords = from words in File.ReadAllLines(Source)
                               where words.Length == 6
                               select words;
         }
 
+        /// <summary>
+        /// Get clean data of 5 characters words from JSON file.
+        /// </summary>
+        private static void LoadDataFromJSON()
+        {
+            if (File.Exists(JSONDataSource))
+            {
+                fiveLettersWords = JSONDictionaryLoader.LoadFromJSON(JSONDataSource).Where(o => o.Length == 5);
+            }
+        }
 
         /// <summary>
         /// Get clean data of 6 words from dirty wikitionary dump.
@@ -87,7 +102,7 @@ namespace SimpleWordle
             {
                 WiktionaryProcessor wikiProcessor = new WiktionaryProcessor();
                 wikiProcessor.ProcessRawData(RawDataSource, CleanDataFile);
-                sixLettersWords = wikiProcessor.Words.Where(o => o.Length == 6).ToList();
+                fiveLettersWords = wikiProcessor.Words.Where(o => o.Length == 5);
             }
             else
             {
