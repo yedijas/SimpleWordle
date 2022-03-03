@@ -32,6 +32,7 @@ namespace SimpleWordle
 
             Console.WriteLine("Simple Wordle " + DateTime.Today.ToString("yyyy-MM-dd") + "!");
             theGame.WordOfTheDay = GetRandomWord().ToLowerInvariant();
+            Console.WriteLine();
 
             while (!theGame.IsCorrect && !theGame.IsTimeOut)
             {
@@ -66,7 +67,8 @@ namespace SimpleWordle
         /// <returns>a 5 characters words for user to guess.</returns>
         private static string GetRandomWord()
         {
-            Random rng = new Random((int)DateTime.Today.Ticks);
+            //Random rng = new Random((int)DateTime.Today.Ticks);
+            Random rng = new Random((int)DateTime.Now.Ticks);
             int randomIndex = rng.Next(0, fiveLettersWords.Count() - 1);
             return fiveLettersWords.ElementAt(randomIndex);
         }
